@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Binary Morse Code Translator</title>
+  <style>
+    #input-form {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    textarea,
+    .output-box,
+    select {
+      width: 800px;
+      max-width: 2000px;
+      min-width: 300px;
+
+      height: 150px;
+      min-height: 150px;
+
+      padding: 10px;
+      font-size: 16px;
+      text-align: left;
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+
+      resize: both;
+      overflow: auto;
+      box-sizing: border-box;
+    }
+
+    .output-box {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    select {
+      height: auto;
+      min-height: 0;
+      resize: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Binary Morse code translator</h1>
+
+  <div id="input-form">
+    <label for="mode">Translation mode</label>
+    <select id="mode">
+      <option value="text-to-morse">Text to Binary Morse code</option>
+      <option value="morse-to-text">Binary Morse code to text</option>
+    </select>
+  </div>
+
+  <div id="input-form">
+    <label for="input">Enter text here</label>
+    <textarea id="input"></textarea>
+  </div>
+
+  <div>
+    <label for="output">Translation</label>
+    <textarea id="output" class="output-box" readonly></textarea>
+  </div>
+
+  <p>In Binary Morse code, dots (.) are represented by 0's, dashes (-) are represented by 1's, letters are separated by spaces, and words are separated by <code>/</code>.</p>
+
+  <script>
+    const input = document.getElementById("input");
+    const output = document.getElementById("output");
+    const mode = document.getElementById("mode");
+
+    const MORSE_CODE = {
+      "A": "01",
+      "B": "1000",
+      "C": "1010",
+      "D": "100",
+      "E": "0",
+      "F": "0010",
+      "G": "110",
+      "H": "0000",
+      "I": "00",
+      "J": "0111",
+      "K": "101",
+      "L": "0100",
+      "M": "11",
+      "N": "10",
+      "O": "111",
+      "P": "0110",
+      "Q": "1101",
+      "R": "010",
+      "S": "000",
+      "T": "1",
+      "U": "001",
+      "V": "0001",
+      "W": "011",
+      "X": "1001",
+      "Y": "1011",
+      "Z": "1100",
+
+      "0": "11111",
+      "1": "01111",
+      "2": "00111",
+      "3": "00011",
+      "4": "00001",
+      "5": "00000",
+      "6": "10000",
+      "7": "11000",
+      "8": "11100",
+      "9": "11110",
+
+      ".": "010101",
+      ",": "110011",
+      "?": "001100",
+      "!": "101011",
+      "'": "011110",
+      "\"": "010010",
+      "/": "10010",
+      "(": "10110",
+      ")": "101101",
+      "&": "01000",
+      ":": "111000",
+      ";": "101010",
+      "=": "10001",
+      "+": "01010",
+      "-": "100001",
+      "_": "001101",
+      "$": "0001001",
+      "@": "011010",
+
+      "Ä": "0101",
+      "Á": "01101",
+      "Å": "01101",
+      "É": "00100",
+      "Ñ": "11011",
+      "Ö": "1110",
+      "Ü": "0011"
+    };
+
+    const REVERSE_MORSE_CODE = {};
+    for (const key in MORSE_CODE) {
+      REVERSE_MORSE_CODE[MORSE_CODE[key]] = key;
+    }
+
+    const EMOTICONS = [
+      ">:(", ">:)", ">:D", "D:<", ":)", ":(",
+      ";)", ":D", "D:", ";D", ":P", "OoO", "O.O",
+      "O_O", "^v^", "^o^", "^_^", "<3", "8D", "D8"
+    ].sort((a, b) => b.length - a.length);
+
+    input.addEventListener("input", updateOutput);
+    mode.addEventListener("change", updateOutput);
+
+    function updateOutput() {
+      if (mode.value === "text-to-morse") {
+        output.value = translateToMorse(input.value);
+      } else {
+        output.value = translateToText(input.value);
+      }
+    }
+
+    function getEmoticonAt(text, index) {
+      for (const emoticon of EMOTICONS) {
+        if (text.startsWith(emoticon, index)) {
+          return emoticon;
+        }
+      }
+      return "";
+    }
+
+    function translateToMorseLine(text) {
+      if (text === "") return "";
+
+      const parts = [];
+
+      for (let i = 0; i < text.length; i++) {
+        const emoticon = getEmoticonAt(text, i);
+
+        if (emoticon) {
+          parts.push(emoticon);
+          i += emoticon.length - 1;
+          continue;
+        }
+
+        const char = text[i];
+
+        if (char === " ") {
+          parts.push("/");
+          continue;
+        }
+
+        const upperChar = char.toUpperCase();
+        const morse = MORSE_CODE[upperChar] || MORSE_CODE[char];
+
+        if (morse) {
+          parts.push(morse);
+        } else {
+          parts.push(char);
+        }
+      }
+
+      return parts.join(" ");
+    }
+
+    function translateToMorse(text) {
+      return text
+        .split(/\r?\n/)
+        .map(translateToMorseLine)
+        .join("\n");
+    }
+
+    function translateMorseLineToText(line) {
+      if (line.trim() === "") return "";
+
+      const words = line.trim().split(/\s*\/\s*/);
+      const result = [];
+
+      for (const word of words) {
+        if (!word.trim()) continue;
+
+        const letters = word.trim().split(/\s+/);
+        let translatedWord = "";
+
+        for (const letter of letters) {
+          if (REVERSE_MORSE_CODE[letter]) {
+            translatedWord += REVERSE_MORSE_CODE[letter];
+          } else {
+            translatedWord += letter;
+          }
+        }
+
+        result.push(translatedWord);
+      }
+
+      return result.join(" ");
+    }
+
+    function translateToText(morseText) {
+      return morseText
+        .split(/\r?\n/)
+        .map(translateMorseLineToText)
+        .join("\n");
+    }
+
+    updateOutput();
+  </script>
+</body>
+</html>
